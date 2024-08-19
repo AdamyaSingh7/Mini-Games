@@ -1,0 +1,519 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <vector>
+#include <stdlib.h> #include <conio.h>
+#include <ctime>
+#include <sstream> #include <random> using namespace std;
+void line(int n)
+{ int i; for (i=0; i<n; i++)
+{
+cout<<"=";
+}
+cout<<endl;
+}
+class User
+{
+string username; string password;
+public:
+User(string username, string password)
+{
+this->username = username; this->password = password;
+}
+string getUsername() const
+{
+return username;
+}
+string getPassword() const
+{
+return password;
+}
+};
+class UserManager
+{
+vector<User> users; string filename;
+public:
+UserManager(string filename)
+{
+this->filename = filename; loadUsers();
+}
+void loadUsers()
+{
+ifstream file(filename); if (file.is_open())
+{
+string username, password; while (file >> username >> password)
+{
+User user(username, password); users.push_back(user);
+} file.close();
+}
+}
+void saveUser(const User& user)
+{
+ofstream file(filename, ios::app); if (file.is_open())
+{
+file << user.getUsername() << " " << user.getPassword() << endl; file.close();
+}
+}
+bool usernameExists(const string& username) const
+{
+for (const User& user : users)
+{
+if (user.getUsername() == username)
+{
+return true;
+}
+}
+return false;
+}
+bool authenticate(const string& username, const string& password) const
+{
+for (const User& user : users)
+{
+if (user.getUsername() == username && user.getPassword() == password)
+{
+return true;
+}
+}
+return false;
+}
+};
+class login
+{ public:
+friend class games; virtual void choicemenu(){} string username1; void signup()
+{
+char c;
+UserManager userManager("users.txt"); string username, password;
+line(49); cout<<"|\t\t1. SIGN-UP MENU\t\t\t|\n"; line(49);
+cout << "Enter the Username : "; cin >> username; if (userManager.usernameExists(username))
+{
+cout << "\nUsername already exists!!!" << endl; line(49);
+cout << "Want to try new username(y/n) : "; cin >> c;
+line(49); getch(); if (c=='y'||c=='Y')
+{
+system("cls"); signup();
+} if (c=='n'||c=='N')
+{
+loginmenu();
+}
+}
+else
+{
+cout << "Enter a password	: "; cin >> password; User user(username, password); userManager.saveUser(user); cout << "\nUser created!!!" << endl; getch(); system("cls");
+}
+}
+void login1()
+{
+char c;
+UserManager userManager("users.txt"); for(int i=0; i<3; i++)
+{
+string username, password;
+line(49); cout<<"|\t\t1. LOGIN MENU \t\t\t|\n"; line(49);
+cout << "Enter your username : "; cin >> username; cout << "Enter your password : "; cin >> password; if (userManager.authenticate(username, password))
+{ line(49); cout << "\nLogin successful!!!" << endl; line(49); getch(); system("cls");
+username1 = username; choicemenu();
+}
+else
+{
+cout << "Incorrect username or password!!!" << endl;
+line(49);
+cout << "Want to try new username(y/n) : ";
+cin >> c;
+line(49); getch(); if (c=='y'||c=='Y')
+{
+system("cls"); login1(); } if (c=='n'||c=='N')
+{
+system("cls"); loginmenu();
+}
+}
+}
+}
+void loginmenu()
+{
+int choice; do
+{ line(49);
+cout<<"|\t\tWELCOME TO MINI GAMES\t\t|\n";
+line(49); cout<<"|\t\t1. LOGIN\t\t\t|\n"; cout<<"|\t\t2. SIGN UP\t\t\t|\n"; cout<<"|\t\t3. Exit\t\t\t\t|\n"; line(49);
+cout << "Enter your choice: "; cin >> choice;
+line(49); getch(); system("cls"); if (choice == 2)
+{
+signup();
+}
+else if (choice == 1)
+{ login1();
+}
+else if (choice==3)
+{
+choicemenu();
+}
+}
+while (choice != 3);
+}
+};
+class games : public virtual login
+{ public:
+void highscore(string gamename)
+{ ifstream input_file("score.txt"); if (!input_file)
+{
+cerr << "Error: Could not open input file." << endl;
+exit(1);
+}
+int max_score; string name; string name1; string game; int score; while (input_file >> name >> game >>score)
+{
+max_score=0; if (game==gamename)
+{
+if (score > max_score)
+{
+max_score = score; name1=name;
+}
+}
+} line(49);
+cout<<"\tMAXIMUM SCORER\n";
+line(49);
+cout<<"Player with less than 0 are not included \n";
+line(49);
+cout << "The maximum score	: " << max_score << endl; cout << "User with max score : "<<name1<<endl;
+line(49); getch(); system("cls"); input_file.close();
+}
+bool playerAndGameExists(string playerName, string gameName)
+{ ifstream file("score.txt"); string line;
+while (getline(file, line))
+{
+istringstream iss(line); string name; string game; int score;
+iss >> name >> game >> score;
+if (name == playerName && game == gameName)
+{
+return true;
+}
+}
+return false;
+}
+// Function to insert a new player and game with score in the scores file void insertPlayerAndGame(string playerName, string gameName, int score)
+{
+ofstream file("score.txt", ios_base::app);
+file << playerName << " " << gameName << " " << score << endl; file.close();
+}
+// Function to update the score for an existing player and game in the scores file void updatePlayerAndGame(string playerName, string gameName, int newScore)
+{
+vector<string> lines; ifstream file("score.txt"); string line;
+while (getline(file, line))
+{
+istringstream iss(line); string name; string game; int score;
+iss >> name >> game >> score;
+if (name == playerName && game == gameName)
+{
+score = score+newScore; line = name +" "+ game+" " + to_string(score);
+}
+lines.push_back(line);
+} file.close(); ofstream outFile("score.txt"); for (const auto& line : lines)
+{
+outFile << line << endl;
+}
+outFile.close();
+}
+void game1_play()
+{
+const int MAX_WRONG = 8; // maximum number of incorrect guesses allowed vector<string> words; // collection of possible words to guess words.push_back("GUESS"); words.push_back("HANGMAN"); words.push_back("DIFFICULT"); srand(static_cast<unsigned int>(time(0))); int n = words.size(); for (int i = 0; i < n - 1; i++)
+{
+int j = i + rand() % (n - i);
+std::swap(words[i], words[j]);
+}
+const string THE_WORD = words[0]; // word to guess int wrong = 0; // number of incorrect guesses string soFar(THE_WORD.size(), '-'); // word guessed so far string used = ""; // letters already guessed line(49);
+cout << "\tWelcome to Hangman. Good luck!\n"; line(49);
+// main loop while ((wrong < MAX_WRONG) && (soFar != THE_WORD))
+{
+cout << "\n\nYou have " << (MAX_WRONG - wrong) << " incorrect guesses left.\n"; cout << "\nYou've used the following letters:\n" << used << endl; cout << "\nSo far, the word is:\n" << soFar << endl; char guess;
+cout << "\nEnter your guess: "; cin >> guess; guess = toupper(guess); // convert guess to uppercase
+while (used.find(guess) != string::npos)
+{
+cout << "\nYou've already guessed " << guess << endl; cout << "Enter your guess: "; cin >> guess; guess = toupper(guess);
+}
+used += guess;
+if (THE_WORD.find(guess) != string::npos)
+{
+cout << "That's right! " << guess << " is in the word.\n";
+line(49);
+// update soFar to include newly guessed letter for (unsigned int i = 0; i < THE_WORD.length(); ++i)
+{
+if (THE_WORD[i] == guess)
+{
+soFar[i] = guess;
+}
+}
+}
+else
+{
+cout << "Sorry, " << guess << " isn't in the word.\n";
+line(49);
+++wrong;
+}
+}
+// game over if (wrong == MAX_WRONG)
+{
+cout << "\nYou've been hanged!\n";
+line(49);
+if (playerAndGameExists(username1, "HANGMAN"))
+{
+updatePlayerAndGame(username1, "HANGMAN", -1); cout << "Score updated successfully" << endl;
+}
+else
+{
+insertPlayerAndGame(username1, "HANGMAN", -1); cout << "Score added successfully" << endl;
+}
+}
+else
+{
+cout << "You guessed it!\n";
+line(49);
+if (playerAndGameExists(username1, "HANGMAN"))
+{
+updatePlayerAndGame(username1, "HANGMAN", 1); cout << "Score updated successfully" << endl;
+}
+else
+{
+insertPlayerAndGame(username1, "HANGMAN", 1); cout << "Score added successfully" << endl;
+}
+}
+cout << "\nThe word was " << THE_WORD << endl; line(49); getch(); system("cls");
+}
+void game3_play()
+{ line(49);
+cout << "\tWelcome to the Rock-Paper-Scissor game!\n"; line(49); cout<<endl<<endl; line(49);
+cout<<"\t\tRULES OF GAME\n";
+line(49);
+cout<<"1.The game will have rounds as entered Y/N by the user.\n"; cout<<"2.You have to give your input and computer\n\twill give random output for
+that."<<endl;
+line(49); getch(); system("cls"); srand(time(nullptr)); // Seed the random number generator with the current time int playerScore = 0; int computerScore = 0; string choices[3] = {"r", "p", "s"}; line(49);
+cout<<"|\tWELCOME TO ROCK-PAPER-SCISSORS\t\t|\n"; line(49); while (true)
+{
+cout<<endl<<endl; line(49);
+cout<<"r->rock ,p-> paper, s->scissors\n"; cout << "Enter your choice (r/p/s) : "; string playerChoice; cin >> playerChoice; cout<<endl;
+while (playerChoice != "r" && playerChoice != "p" && playerChoice != "s")
+{
+cout << "Invalid choice. Please enter rock, paper, or scissors: "; cin >> playerChoice;
+}
+// Generate the computer's choice int computerChoiceIndex = rand() % 3; string computerChoice = choices[computerChoiceIndex];
+cout<<"Computer choice : "<<computerChoice<<endl; // Determine the winner and update the scores if (playerChoice == computerChoice)
+{
+cout << "Tie game" << endl;
+}
+else if ((playerChoice == "r" && computerChoice == "s") ||
+(playerChoice == "p" && computerChoice == "r") ||
+(playerChoice == "s" && computerChoice == "p"))
+{
+cout << "You win!" << endl;
+if (playerAndGameExists(username1, "ROCK-PAPER-SCISSOR"))
+{
+updatePlayerAndGame(username1, "ROCK-PAPER-SCISSOR", 1); cout << "Score updated successfully" << endl;
+}
+else
+{
+insertPlayerAndGame(username1, "ROCK-PAPER-SCISSOR", 1); cout << "Score added successfully" << endl;
+}
+playerScore++;
+}
+else
+{
+cout << "Computer wins" << endl; if (playerAndGameExists(username1, "ROCK-PAPER-SCISSOR"))
+{
+updatePlayerAndGame(username1, "ROCK-PAPER-SCISSOR", -1); cout << "Score updated successfully" << endl;
+}
+else
+{
+insertPlayerAndGame(username1, "ROCK-PAPER-SCISSOR", -1); cout << "Score added successfully" << endl;
+}
+computerScore++;
+}
+// Print the current scores cout << "Current score: You " << playerScore << ", Computer " << computerScore <<
+endl;
+// Ask the player if they want to play again char playAgain; cout << "\nDo you want to play again? (y/n): "; cin >> playAgain;
+line(49); if (playAgain == 'n' || playAgain == 'N')
+{
+break;
+}
+}
+cout<<endl<<endl; line(49);
+cout << "Final score: You " << playerScore << ", Computer " << computerScore << endl; line(49); getch(); system("cls");
+}
+void game2_play()
+{
+int balance = 100; // starting balance int bet; char choice; char cho;
+line(49);
+cout << "\tWelcome to the Casino Guessing game!\n"; line(49);
+cout<<"\nYou have $" << balance << " to start." << endl; line(49); getch(); system("cls"); line(49);
+cout<<"\tRULES OF GAME\n";
+line(49); cout<<"1.Your initial balance :"<<balance; cout<<"\n2.Enter your choice to play or leave"; cout<<"\n3.Enter your bet\n"; line(49);
+while (balance > 0)
+{
+cout << "\n\nEnter your bet : $ "; cin >> bet; if (bet > balance)
+{
+cout << "You don't have enough money to make that bet." << endl; cout<<"Do you want to continue or leave (y/n) : "; cin>>cho;
+if (cho == 'y' || cho== 'Y')
+{continue;}
+else if (cho == 'n' || cho== 'N')
+{
+break;
+}
+}
+cout << "Choose (h)eads or (t)ails : "; cin >> choice; int coin = rand() % 2; if(choice== 'h' || choice=='H' || choice=='t' || choice=='T')
+{// flip coin
+if ((coin == 0 && choice == 'h') || (coin == 1 && choice == 't'))
+{
+cout << "You win $" << bet << "!" << endl; balance += bet;
+cout<<"\nCurrent Balance : "<<balance<<endl; if (playerAndGameExists(username1, "CASINO"))
+{
+updatePlayerAndGame(username1, "CASINO", 1); cout << "Score updated successfully" << endl;
+}
+else
+{
+insertPlayerAndGame(username1, "CASINO", 1); cout << "Score added successfully" << endl;
+}
+cout<<"Do you want to continue or leave (y/n) : "; cin>>cho; if (cho == 'y' || cho== 'Y') {continue;} else if (cho == 'n' || cho== 'N')
+{
+break;
+}
+}
+else
+{
+cout << "You lose $" << bet << "." << endl; balance -= bet; cout<<"\nCurrent Balance : "<<balance<<endl; if (playerAndGameExists(username1, "CASINO"))
+{
+updatePlayerAndGame(username1, "CASINO", -1); cout << "Score updated successfully" << endl;
+}
+else
+{
+insertPlayerAndGame(username1, "CASINO", -1); cout << "Score added successfully" << endl;
+}
+cout<<"\nDo you want to continue or leave (y/n) : "; cin>>cho; if (cho == 'y' || cho== 'Y') {continue;} else if (cho == 'n' || cho== 'N')
+{
+break;
+}
+}
+}
+else
+{
+cout<<"\nEnter a correct choice\n";
+}
+cout << "Your current balance is $" << balance << "." << endl;
+}
+cout<<endl; line(49);
+cout << "Game over" << endl; line(49); getch(); system("cls");
+}
+void game1()
+{
+int choice;
+do
+{ line(49);
+cout<<"|\t\tWELCOME TO TIC-TAC-TOE\t\t|\n";
+line(49); cout<<"|\t\t1. PLAY GAME\t\t\t|\n"; cout<<"|\t\t2. VIEW HIGH SCORE\t\t|\n";
+cout<<"|\t\t3. EXIT\t\t\t\t|\n"; line(49);
+cout << "Enter your choice (1/2/3) : "; cin >> choice;
+line(49); getch(); system("cls"); if (choice == 1)
+{
+game1_play();
+}
+else if (choice == 2)
+{
+highscore("HANGMAN");
+}
+}
+while (choice != 3);
+}
+void game2()
+{
+int choice;
+do
+{ line(49);
+cout<<"|\tWELCOME TO CASINO GUESSING GAME\t\t|\n"; line(49); cout<<"|\t\t1. PLAY GAME\t\t\t|\n"; cout<<"|\t\t2. VIEW HIGH SCORE\t\t|\n";
+cout<<"|\t\t3. EXIT\t\t\t\t|\n"; line(49);
+cout << "Enter your choice (1/2/3) : "; cin >> choice; line(49); getch(); system("cls"); if (choice == 1)
+{
+game2_play();
+}
+else if (choice == 2)
+{
+highscore("CASINO");
+}
+}
+while (choice != 3);
+}
+void game3()
+{
+int choice;
+do
+{ line(49);
+cout<<"|\tWELCOME TO ROCK-PAPER-SCISSORS\t\t|\n"; line(49); cout<<"|\t\t1. PLAY GAME\t\t\t|\n"; cout<<"|\t\t2. VIEW HIGH SCORE\t\t|\n";
+cout<<"|\t\t3. EXIT\t\t\t\t|\n"; line(49);
+cout << "Enter your choice (1/2/3) : "; cin >> choice;
+line(49); getch(); system("cls"); if (choice == 1)
+{
+game3_play();
+}
+else if (choice == 2)
+{
+highscore("ROCK-PAPER-SCISSOR");
+}
+}
+while (choice != 3);
+}
+};
+class mainmenu : public virtual login,games
+{ public:
+friend class games; void profile()
+{ ifstream infile("score.txt"); if (!infile.is_open())
+{
+cout << "Error: could not open file " << endl;
+}
+int i=0; string name; string game; int total_games; line(49); cout<<"|\t\tPLAYER PROFILE\t\t\t|\n"; line(49);
+cout<<"PLAYER\t: "<<username1<<endl; while (infile >> name >> game >> total_games)
+{
+if (name == username1)
+{
+cout << "\nGame\t: " << game << endl; cout << "Total Score : " << total_games << endl<<endl;
+}
+} line(49); infile.close(); getch(); system("cls"); }
+void gamemenu()
+{
+int choice;
+do
+{ line(49); cout<<"|\t\tGAME MENU\t\t\t|\n"; line(49); cout<<"|\t\t1. HANGMAN\t\t\t|\n"; cout<<"|\t\t2. CASINO GUESSING\t\t|\n"; cout<<"|\t\t3. ROCK-PAPER-SCISSOR\t\t|\n"; cout<<"|\t\t4. Exit\t\t\t\t|\n"; line(49); cout << "Enter your choice (1/2/3/4): "; cin >> choice; line(49); getch(); system("cls"); if (choice == 1)
+{
+game1();
+}
+else if (choice == 2)
+{
+game2();
+}
+else if (choice == 3)
+{
+game3();
+}
+}
+while (choice != 4);
+}
+void choicemenu()
+{
+int choice;
+do
+{ line(49);
+cout<<"|\t\tWELCOME MAIN MENU\t\t|\n";
+line(49);
+cout<<"|\t\t1. PLAY A GAME\t\t\t|\n"; cout<<"|\t\t2. VIEW YOUR PROFILE\t\t|\n";
+cout<<"|\t\t3. EXIT\t\t\t\t|\n"; line(49);
+cout << "Enter your choice: "; cin >> choice; line(49); getch(); system("cls"); if (choice == 2)
+{ profile();
+}
+else if (choice == 1)
+{
+gamemenu();
+}
+else if (choice==3)
+{ exit(0);
+}
+}
+while (choice != 3);
+}
+};
+int main()
+{
+mainmenu obj;
+obj.loginmenu(); return 0;
+}
